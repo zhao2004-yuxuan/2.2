@@ -6,3 +6,5 @@ minio==7.2.7
 pandas==2.2.2
 requests==2.32.3
 pyecharts==2.0.6
+Pillow==10.4.0
+pyzbar==0.1.9
