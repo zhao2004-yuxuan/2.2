@@ -65,7 +65,10 @@ def _upload_file(local_path, bucket_name=DEFAULT_BUCKET, object_name=None):
 
 def _latest_minio_url(bucket_name, prefix):
     client = _minio_client()
-    objects = list(client.list_objects(bucket_name, prefix=prefix, recursive=True))
+    try:
+        objects = list(client.list_objects(bucket_name, prefix=prefix, recursive=True))
+    except Exception:
+        objects = []
     if not objects:
         return None
     latest = max(objects, key=lambda item: item.last_modified)
@@ -134,7 +137,7 @@ def upload(data):
     output_path = os.path.join(tempfile.gettempdir(), _safe_name("barcode_upload", ".csv"))
     pd.DataFrame(rows).to_csv(output_path, index=False, encoding="utf-8-sig")
     upload_csv_url = _upload_file(output_path, bucket_name, f"barcode/csv/{os.path.basename(output_path)}")
-    return _ok({"upload_csv_url": upload_csv_url, "image_count": len(rows)})
+    return _ok({"upload_csv_url": upload_csv_url, "csv_url": upload_csv_url, "image_count": len(rows)})
 
 
 def clean(data):
@@ -172,7 +175,7 @@ def clean(data):
     output_csv = os.path.join(tempfile.gettempdir(), _safe_name("barcode_clean", ".csv"))
     pd.DataFrame(rows).to_csv(output_csv, index=False, encoding="utf-8-sig")
     clean_csv_url = _upload_file(output_csv, bucket_name, f"barcode/csv/{os.path.basename(output_csv)}")
-    return _ok({"clean_csv_url": clean_csv_url, "image_count": len(rows)})
+    return _ok({"clean_csv_url": clean_csv_url, "csv_url": clean_csv_url, "image_count": len(rows)})
 
 
 def input(data):
@@ -212,7 +215,7 @@ def input(data):
     output_csv = os.path.join(tempfile.gettempdir(), _safe_name("barcode_result", ".csv"))
     pd.DataFrame(rows).to_csv(output_csv, index=False, encoding="utf-8-sig")
     result_csv_url = _upload_file(output_csv, bucket_name, f"barcode/csv/{os.path.basename(output_csv)}")
-    return _ok({"result_csv_url": result_csv_url, "recognized_count": int(sum(1 for r in rows if r["data"]))})
+    return _ok({"result_csv_url": result_csv_url, "csv_url": result_csv_url, "recognized_count": int(sum(1 for r in rows if r["data"]))})
 
 
 def data_record(data):
@@ -241,4 +244,4 @@ def data_record(data):
     output_csv = os.path.join(tempfile.gettempdir(), _safe_name("barcode_final", ".csv"))
     df.to_csv(output_csv, index=False, encoding="utf-8-sig", quoting=csv.QUOTE_MINIMAL)
     final_csv_url = _upload_file(output_csv, bucket_name, f"barcode/csv/{os.path.basename(output_csv)}")
-    return _ok({"final_csv_url": final_csv_url, "rows": int(len(df))})
+    return _ok({"final_csv_url": final_csv_url, "csv_url": final_csv_url, "rows": int(len(df))})
