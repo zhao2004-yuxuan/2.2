@@ -17,7 +17,7 @@ from storage import upload_to_minio, DEFAULT_BUCKET
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_SOURCE_CSV = os.path.join(os.path.dirname(BASE_DIR), "实验2", "data(1).csv")
+DEFAULT_SOURCE_CSV = os.path.join(BASE_DIR, "data(1).csv")
 
 
 def _ok(data):
