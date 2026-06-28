@@ -29,6 +29,7 @@ MINIO_PUBLIC_URL = "http://10.21.221.12:9000"
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "Admin@hd2019"
 DEFAULT_BUCKET = "timedata"
+DEFAULT_BARCODE_IMAGE_DIR = r"G:\大三下\工业微服务架构\tiaoma_data"
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 
@@ -103,7 +104,7 @@ def upload(data):
     - upload_csv_url: 包含 filename,image_url 两列的 CSV 地址
     - image_count: 上传图片数量
     """
-    local_path = data.get("local_path") or data.get("image_path") or data.get("folder_path")
+    local_path = data.get("local_path") or data.get("image_path") or data.get("folder_path") or DEFAULT_BARCODE_IMAGE_DIR
     if not local_path:
         raise Exception("缺少 local_path/image_path/folder_path 参数")
     if not os.path.exists(local_path):
