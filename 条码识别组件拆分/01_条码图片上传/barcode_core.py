@@ -63,6 +63,15 @@ def _upload_file(local_path, bucket_name=DEFAULT_BUCKET, object_name=None):
         raise Exception(f"上传 MinIO 失败: {err}")
 
 
+def _latest_minio_url(bucket_name, prefix):
+    client = _minio_client()
+    objects = list(client.list_objects(bucket_name, prefix=prefix, recursive=True))
+    if not objects:
+        return None
+    latest = max(objects, key=lambda item: item.last_modified)
+    return f"{MINIO_PUBLIC_URL}/{bucket_name}/{latest.object_name}"
+
+
 def _download_file(url, suffix=None):
     if suffix is None:
         suffix = os.path.splitext(urlparse(url).path)[1] or ".tmp"
@@ -138,11 +147,11 @@ def clean(data):
     输出：
     - clean_csv_url: 包含 filename,cleaned_image_url 两列的 CSV 地址
     """
-    source = data.get("upload_csv_url") or data.get("csv_url") or data.get("local_path")
-    if not source:
-        raise Exception("缺少 upload_csv_url/csv_url/local_path 参数")
-
     bucket_name = data.get("bucket_name", DEFAULT_BUCKET)
+    source = data.get("upload_csv_url") or data.get("csv_url") or data.get("local_path") or _latest_minio_url(bucket_name, "barcode/csv/barcode_upload_")
+    if not source:
+        raise Exception("缺少 upload_csv_url/csv_url/local_path 参数，且 MinIO 中没有找到 barcode_upload CSV")
+
     df = _read_csv(source)
     if "image_url" not in df.columns:
         raise Exception("输入 CSV 必须包含 image_url 列")
@@ -176,11 +185,11 @@ def input(data):
     输出：
     - result_csv_url: 包含 filename,type,data 三列的识别结果 CSV 地址
     """
-    source = data.get("clean_csv_url") or data.get("csv_url") or data.get("local_path")
-    if not source:
-        raise Exception("缺少 clean_csv_url/csv_url/local_path 参数")
-
     bucket_name = data.get("bucket_name", DEFAULT_BUCKET)
+    source = data.get("clean_csv_url") or data.get("csv_url") or data.get("local_path") or _latest_minio_url(bucket_name, "barcode/csv/barcode_clean_")
+    if not source:
+        raise Exception("缺少 clean_csv_url/csv_url/local_path 参数，且 MinIO 中没有找到 barcode_clean CSV")
+
     df = _read_csv(source)
     url_col = "cleaned_image_url" if "cleaned_image_url" in df.columns else "image_url"
     if url_col not in df.columns:
@@ -216,11 +225,11 @@ def data_record(data):
     输出：
     - final_csv_url: 最终可追溯结果 CSV，字段为 filename,type,data,record_time,status
     """
-    source = data.get("result_csv_url") or data.get("csv_url") or data.get("local_path")
-    if not source:
-        raise Exception("缺少 result_csv_url/csv_url/local_path 参数")
-
     bucket_name = data.get("bucket_name", DEFAULT_BUCKET)
+    source = data.get("result_csv_url") or data.get("csv_url") or data.get("local_path") or _latest_minio_url(bucket_name, "barcode/csv/barcode_result_")
+    if not source:
+        raise Exception("缺少 result_csv_url/csv_url/local_path 参数，且 MinIO 中没有找到 barcode_result CSV")
+
     df = _read_csv(source)
     for col in ["filename", "type", "data"]:
         if col not in df.columns:
